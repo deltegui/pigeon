@@ -28,7 +28,7 @@ type AsyncSender struct {
 
 const defaultBuffer int = 10
 
-func NewAsyncMailSender(config MailSenderConfiguration) AsyncSender {
+func NewAsyncMailSender(config MailSenderConfiguration) *AsyncSender {
 	bufferSize := defaultBuffer
 
 	if config.AsyncBufferSize > 0 {
@@ -36,14 +36,14 @@ func NewAsyncMailSender(config MailSenderConfiguration) AsyncSender {
 	}
 	c := make(chan SendRequest, bufferSize)
 
-	return AsyncSender{
+	return &AsyncSender{
 		config:   config,
 		handlers: map[Type]MailHandler{},
 		Input:    c,
 	}
 }
 
-func (sender AsyncSender) Start() {
+func (sender *AsyncSender) Start() {
 	go func() {
 		log.Println("Mailer async thread started to listen requests...")
 		api := MailApi{
@@ -66,7 +66,7 @@ func (sender AsyncSender) Start() {
 	}()
 }
 
-func (sender AsyncSender) Send(req SendRequest) error {
+func (sender *AsyncSender) Send(req SendRequest) error {
 	sender.Input <- req
 	return nil
 }
@@ -75,19 +75,19 @@ func (sender *AsyncSender) RegisterMailType(t Type, handler MailHandler) {
 	sender.handlers[t] = handler
 }
 
-type SyncMailSender struct {
+type SyncSender struct {
 	config   MailSenderConfiguration
 	handlers map[Type]MailHandler
 }
 
-func NewSyncMailSender(config MailSenderConfiguration) SyncMailSender {
-	return SyncMailSender{
+func NewSyncMailSender(config MailSenderConfiguration) *SyncSender {
+	return &SyncSender{
 		config:   config,
 		handlers: map[Type]MailHandler{},
 	}
 }
 
-func (sync SyncMailSender) Send(req SendRequest) error {
+func (sync SyncSender) Send(req SendRequest) error {
 	api := MailApi{
 		config: sync.config,
 	}
@@ -102,4 +102,8 @@ func (sync SyncMailSender) Send(req SendRequest) error {
 		return err
 	}
 	return nil
+}
+
+func (sender *SyncSender) RegisterMailType(t Type, handler MailHandler) {
+	sender.handlers[t] = handler
 }
