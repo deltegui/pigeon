@@ -1,4 +1,4 @@
-module pigeon
+module github.com/deltegui/pigeon
 
 go 1.24.2
 
